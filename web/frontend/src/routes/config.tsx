@@ -25,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 export const Route = createFileRoute("/config")({
   component: ConfigPage,
@@ -80,7 +80,7 @@ function RawJsonPanel() {
         setIsDirty(false)
         // Important: Invalidate the query to refresh the cached data
         queryClient.invalidateQueries({ queryKey: ["config"] })
-      } catch (error) {
+      } catch {
         // If JSON parsing fails, invalidate to get fresh data
         queryClient.invalidateQueries({ queryKey: ["config"] })
       }
@@ -94,18 +94,17 @@ function RawJsonPanel() {
   const [isDirty, setIsDirty] = useState(false)
 
   // Store the last saved config to detect changes
-  const [lastSavedConfig, setLastSavedConfig] = useState<any>(null)
+  const [lastSavedConfig, setLastSavedConfig] = useState<Record<string, unknown> | null>(null)
 
-  useEffect(() => {
-    if (config && JSON.stringify(config) !== JSON.stringify(lastSavedConfig)) {
-      // Only update if there are no unsaved changes or if this is the initial load
-      if (!isDirty || !lastSavedConfig) {
-        setEditorValue(JSON.stringify(config, null, 2))
-        setLastSavedConfig(config)
-        setIsDirty(false)
-      }
+  // Initialize editor value when config is first loaded
+  const getInitialEditorValue = () => {
+    if (config && !editorValue) {
+      return JSON.stringify(config, null, 2)
     }
-  }, [config, lastSavedConfig, isDirty])
+    return editorValue
+  }
+  
+  const displayValue = getInitialEditorValue()
 
   const handleSave = () => {
     try {
@@ -170,7 +169,7 @@ function RawJsonPanel() {
               <div className="bg-muted/30 relative rounded-lg border">
               <ScrollArea className="h-[calc(100vh-20rem)] min-h-[200px]">
                 <Textarea
-                  value={editorValue}
+                  value={displayValue}
                   onChange={(e) => {
                     setEditorValue(e.target.value)
                     setIsDirty(true)
