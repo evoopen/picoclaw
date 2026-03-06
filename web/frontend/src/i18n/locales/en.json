@@ -71,7 +71,9 @@
   },
   "common": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "saving": "Saving...",
+    "reset": "Reset"
   },
   "models": {
     "description": "Configure API keys for each AI provider. Only configured models are available for chat.",
@@ -155,7 +157,17 @@
       "description": "Securely manage your API keys and credentials."
     },
     "config": {
-      "description": "System configuration and preferences."
+      "description": "System configuration and preferences.",
+      "raw_json_title": "Raw JSON Configuration",
+      "raw_json_desc": "Advanced users can directly edit the raw JSON configuration below.",
+      "json_placeholder": "Enter valid JSON configuration...",
+      "save_success": "Configuration saved successfully.",
+      "save_error": "Failed to save configuration.",
+      "reset_success": "Configuration has been reset.",
+      "invalid_json": "Invalid JSON format.",
+      "format_success": "JSON formatted successfully.",
+      "format_error": "Invalid JSON format.",
+      "format": "Format"
     },
     "logs": {
       "description": "System logs and monitoring."
