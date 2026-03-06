@@ -36,7 +36,7 @@ function ConfigPage() {
   return (
     <div className="flex h-full flex-col">
       <PageHeader title={t("navigation.config", "Config")} />
-      <div className="flex-1 overflow-auto p-4 lg:p-8">
+      <div className="flex-1 overflow-auto p-3 lg:p-6">
         <div className="mx-auto max-w-4xl">
           <RawJsonPanel />
         </div>
@@ -73,7 +73,17 @@ function RawJsonPanel() {
     },
     onSuccess: () => {
       toast.success(t("pages.config.save_success", "Configuration saved successfully."))
-      queryClient.invalidateQueries({ queryKey: ["config"] })
+      // Update last saved config and reset dirty state
+      try {
+        const savedConfig = JSON.parse(editorValue)
+        setLastSavedConfig(savedConfig)
+        setIsDirty(false)
+        // Important: Invalidate the query to refresh the cached data
+        queryClient.invalidateQueries({ queryKey: ["config"] })
+      } catch (error) {
+        // If JSON parsing fails, invalidate to get fresh data
+        queryClient.invalidateQueries({ queryKey: ["config"] })
+      }
     },
     onError: () => {
       toast.error(t("pages.config.save_error", "Failed to save configuration."))
@@ -81,20 +91,29 @@ function RawJsonPanel() {
   })
 
   const [editorValue, setEditorValue] = useState("")
+  const [isDirty, setIsDirty] = useState(false)
+
+  // Store the last saved config to detect changes
+  const [lastSavedConfig, setLastSavedConfig] = useState<any>(null)
 
   useEffect(() => {
-    if (config) {
-      setEditorValue(JSON.stringify(config, null, 2))
+    if (config && JSON.stringify(config) !== JSON.stringify(lastSavedConfig)) {
+      // Only update if there are no unsaved changes or if this is the initial load
+      if (!isDirty || !lastSavedConfig) {
+        setEditorValue(JSON.stringify(config, null, 2))
+        setLastSavedConfig(config)
+        setIsDirty(false)
+      }
     }
-  }, [config])
+  }, [config, lastSavedConfig, isDirty])
 
   const handleSave = () => {
     try {
       // Validate JSON before saving
       JSON.parse(editorValue)
       mutation.mutate(editorValue)
-    } catch (e) {
-      toast.error(t("pages.config.invalid_json", "Invalid JSON format."))
+    } catch (error) {
+      toast.error(t("pages.config.invalid_json", error instanceof Error ? error.message : "Invalid JSON format."))
     }
   }
 
@@ -104,15 +123,22 @@ function RawJsonPanel() {
       setEditorValue(formatted)
       toast.success(t("pages.config.format_success", "JSON formatted successfully."))
     } catch (error) {
-      toast.error(t("pages.config.format_error", "Invalid JSON format."))
+      toast.error(t("pages.config.format_error", error instanceof Error ? error.message : "Invalid JSON format."))
     }
   }
 
   const [showResetDialog, setShowResetDialog] = useState(false)
 
   const confirmReset = () => {
-    queryClient.invalidateQueries({ queryKey: ["config"] })
-    toast.info(t("pages.config.reset_success", "Configuration has been reset."))
+    // Reset editor content to the last saved configuration
+    if (lastSavedConfig) {
+      setEditorValue(JSON.stringify(lastSavedConfig, null, 2))
+    } else if (config) {
+      // Fallback to current config if no last saved config
+      setEditorValue(JSON.stringify(config, null, 2))
+    }
+    setIsDirty(false)
+    toast.info(t("pages.config.reset_success", "Changes have been reset to the last saved state."))
     setShowResetDialog(false)
   }
 
@@ -135,12 +161,20 @@ function RawJsonPanel() {
             <p>{t("labels.loading", "Loading...")}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="bg-muted/30 relative rounded-lg border">
+          <div className="space-y-3">
+              {isDirty && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-sm text-yellow-700">
+                  {t("pages.config.unsaved_changes", "You have unsaved changes.")}
+                </div>
+              )}
+              <div className="bg-muted/30 relative rounded-lg border">
               <ScrollArea className="h-[calc(100vh-20rem)] min-h-[200px]">
                 <Textarea
                   value={editorValue}
-                  onChange={(e) => setEditorValue(e.target.value)}
+                  onChange={(e) => {
+                    setEditorValue(e.target.value)
+                    setIsDirty(true)
+                  }}
                   className="font-mono text-sm min-h-[200px] resize-none border-0 bg-transparent px-4 py-3 shadow-none focus-visible:ring-0"
                   placeholder={t(
                     "pages.config.json_placeholder",
@@ -157,7 +191,7 @@ function RawJsonPanel() {
                 <AlertDialogTrigger asChild>
                   <Button 
                     variant="outline" 
-                    disabled={mutation.isPending}
+                    disabled={!isDirty}
                     onClick={() => setShowResetDialog(true)}
                   >
                     {t("common.reset", "Reset")}
@@ -165,9 +199,9 @@ function RawJsonPanel() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{t("pages.config.reset_confirm_title", "Reset Configuration")}</AlertDialogTitle>
+                    <AlertDialogTitle>{t("pages.config.reset_confirm_title", "Reset Changes")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {t("pages.config.reset_confirm_desc", "Are you sure you want to reset the configuration? This action cannot be undone.")}
+                      {t("pages.config.reset_confirm_desc", "Are you sure you want to reset your unsaved changes back to the last saved state?")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

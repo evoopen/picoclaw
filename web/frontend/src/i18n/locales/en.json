@@ -73,7 +73,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving...",
-    "reset": "Reset"
+    "reset": "Reset",
+    "confirm": "Confirm"
   },
   "models": {
     "description": "Configure API keys for each AI provider. Only configured models are available for chat.",
@@ -163,11 +164,14 @@
       "json_placeholder": "Enter valid JSON configuration...",
       "save_success": "Configuration saved successfully.",
       "save_error": "Failed to save configuration.",
-      "reset_success": "Configuration has been reset.",
+      "reset_confirm_title": "Reset Changes",
+      "reset_confirm_desc": "Are you sure you want to reset your unsaved changes back to the last saved state?",
+      "reset_success": "Changes have been reset to the last saved state.",
       "invalid_json": "Invalid JSON format.",
       "format_success": "JSON formatted successfully.",
       "format_error": "Invalid JSON format.",
-      "format": "Format"
+      "format": "Format",
+      "lose_unsaved_changes": "You have unsaved changes. Are you sure you want to reset and lose these changes?"
     },
     "logs": {
       "description": "System logs and monitoring."
